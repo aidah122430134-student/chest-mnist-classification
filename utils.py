@@ -34,7 +34,7 @@ def plot_training_history(train_losses, val_losses, train_accs, val_accs):
     plt.show()
 
 
-def visualize_random_val_predictions(model, val_loader, num_classes: int, count: int = 10):
+def visualize_random_val_predictions(model, val_loader, num_classes: int, count: int = 10, device=None):
     """
     Ambil beberapa gambar random dari validation set, lakukan inferensi, dan visualisasikan.
     - Binary (1 logit): tampilkan Pred, Prob (untuk kelas prediksi), dan GT dengan nama kelas.
@@ -65,7 +65,8 @@ def visualize_random_val_predictions(model, val_loader, num_classes: int, count:
         gt_labels.append(label_tensor)
 
     # Sesuaikan device dengan model (CPU/GPU)
-    device = next(model.parameters()).device
+    if device is None:
+        device = next(model.parameters()).device
     batch = torch.stack(images, dim=0).to(device)
 
     with torch.no_grad():
