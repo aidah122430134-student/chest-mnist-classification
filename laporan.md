@@ -1,9 +1,7 @@
 # Laporan Model 5 - ChestMNIST Binary Classification
 
-**Nama:** Aidah Zahran Nurbaiti Rohmah
-
-**NIM:** 122430134
-
+**Nama:** Aidah Zahran Nurbaiti Rohmah  
+**NIM:** 122430134  
 **Tanggal:** 8 November 2025  
 **Model:** DenseNet121 dengan Two-Stage Training Strategy  
 **Random Seed:** 2024  
@@ -299,4 +297,3 @@ Model 5 siap untuk deployment dengan catatan bahwa evaluasi pada test set dan re
 **Document Version:** 1.0  
 **Last Updated:** 8 November 2025  
 **Author:** ChestMNIST Classification Project Team
-
