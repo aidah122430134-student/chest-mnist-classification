@@ -9,6 +9,20 @@ from medmnist import ChestMNIST
 CLASS_A_IDX = 1  # 'Cardiomegaly'
 CLASS_B_IDX = 7 # 'Pneumothorax'
 
+# --- Data Augmentation untuk Training (Medical-Safe) ---
+# NOTE: Augmentation MENURUNKAN performa untuk dataset ini!
+# Best practice: TIDAK menggunakan augmentation
+TRAIN_TRANSFORM = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5])  # Normalisasi
+])
+
+# --- Transform untuk Validation (tanpa augmentation) ---
+VAL_TRANSFORM = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5])
+])
+
 NEW_CLASS_NAMES = {0: 'Cardiomegaly', 1: 'Pneumothorax'}
 ALL_CLASS_NAMES = [
     'Atelectasis',        # 0
@@ -70,37 +84,33 @@ class FilteredBinaryDataset(Dataset):
             
         return image, torch.tensor([label])
 
-def get_data_loaders(batch_size):
-    # Data augmentation untuk training - optimized untuk medical imaging
-    # Menggunakan 224x224 untuk maximum detail (ImageNet standard)
-    train_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Resize((224, 224), antialias=True),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation(degrees=10),  # Dikurangi untuk medical images
-        transforms.RandomAffine(
-            degrees=0,
-            translate=(0.08, 0.08),  # Dikurangi sedikit
-            scale=(0.92, 1.08),      # Range lebih kecil
-            shear=3                   # Dikurangi untuk medical images
-        ),
-        # Random brightness dan contrast untuk variasi
-        transforms.ColorJitter(brightness=0.1, contrast=0.1),
-        transforms.Normalize(mean=[0.5], std=[0.5]),
-    ])
+def get_data_loaders(batch_size, use_augmentation=True):
+    """
+    Get data loaders with optional data augmentation for training.
     
-    # Validation transform - tanpa augmentation
-    val_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Resize((224, 224), antialias=True),
-        transforms.Normalize(mean=[0.5], std=[0.5]),
-    ])
+    Args:
+        batch_size: Batch size for dataloaders
+        use_augmentation: If True, apply data augmentation to training data
+    
+    Returns:
+        train_loader, val_loader, num_classes, in_channels
+    """
+    # Use augmentation for training if enabled
+    if use_augmentation:
+        train_transform = TRAIN_TRANSFORM
+        print("✅ Data Augmentation AKTIF untuk training data")
+    else:
+        train_transform = VAL_TRANSFORM
+        print("⚠️  Data Augmentation TIDAK AKTIF")
+    
+    # Validation always uses basic transform (no augmentation)
+    val_transform = VAL_TRANSFORM
 
     train_dataset = FilteredBinaryDataset('train', train_transform)
     val_dataset = FilteredBinaryDataset('test', val_transform)
     
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
-    val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=True)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False)
     
     n_classes = 2
     n_channels = 1
@@ -109,7 +119,6 @@ def get_data_loaders(batch_size):
     print(f"Kelas yang digunakan: {NEW_CLASS_NAMES[0]} (Label 0) dan {NEW_CLASS_NAMES[1]} (Label 1)")
     print(f"Jumlah data training: {len(train_dataset)}")
     print(f"Jumlah data validasi: {len(val_dataset)}")
-    print(f"Input size: 224x224 (ImageNet standard for maximum accuracy)")
     
     return train_loader, val_loader, n_classes, n_channels
 
